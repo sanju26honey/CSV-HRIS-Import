@@ -1,0 +1,4 @@
+﻿ employee_id , employee_name , email , manager_id , manager_email , department 
+ E101 , Grace Hopper , GRACE@EXAMPLE.COM , , , Engineering 
+ E102 , Alan Turing , ALAN@EXAMPLE.COM , E101 , grace@example.com , Engineering 
+ E103 , Ada Lovelace , ADA@EXAMPLE.COM , E101 , , Engineering 

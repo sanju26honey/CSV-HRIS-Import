@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diversio HRIS Import Preview</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-color: #e2e8f0;
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --danger-bg: #fef2f2;
+            --danger-text: #991b1b;
+            --danger-border: #fecaca;
+            --success-bg: #f0fdf4;
+            --success-text: #166534;
+            --warning-bg: #fffbeb;
+            --warning-text: #92400e;
+            --radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        p.subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+        }
+
+        .upload-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .upload-form {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="file"] {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        button.btn-primary {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border: none;
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        button.btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .alert-error {
+            background-color: var(--danger-bg);
+            border: 1px solid var(--danger-border);
+            color: var(--danger-text);
+            padding: 1rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            text-align: center;
+        }
+
+        .stat-card .val {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stat-card .lbl {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+
+        .section-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            font-size: 0.8rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .badge-danger {
+            background-color: var(--danger-bg);
+            color: var(--danger-text);
+        }
+
+        .badge-success {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .badge-warning {
+            background-color: var(--warning-bg);
+            color: var(--warning-text);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .empty-state {
+            color: var(--text-secondary);
+            font-style: italic;
+            padding: 0.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Diversio HRIS Import Preview</h1>
+            <p class="subtitle">Upload and validate employee CSV files in-memory</p>
+        </header>
+
+        <section class="upload-card">
+            <form method="post" enctype="multipart/form-data" class="upload-form">
+                {% csrf_token %}
+                <label for="csvFile" style="font-weight: 600; font-size: 0.9rem;">Select CSV File:</label>
+                <input type="file" id="csvFile" name="file" accept=".csv" required>
+                <button type="submit" class="btn-primary">Analyze Import</button>
+            </form>
+        </section>
+
+        {% if format_error %}
+            <div class="alert-error">
+                <strong>Upload Error:</strong> {{ format_error }}
+            </div>
+        {% endif %}
+
+        {% if result %}
+            <div class="summary-grid">
+                <div class="stat-card">
+                    <div class="val">{{ result.source_row_count }}</div>
+                    <div class="lbl">Source Rows</div>
+                </div>
+                <div class="stat-card">
+                    <div class="val">{{ result.accepted_employees|length }}</div>
+                    <div class="lbl">Accepted Employees</div>
+                </div>
+                <div class="stat-card">
+                    <div class="val">{{ result.errors|length }}</div>
+                    <div class="lbl">Validation Errors</div>
+                </div>
+                <div class="stat-card">
+                    <div class="val">{{ result.roots|length }}</div>
+                    <div class="lbl">Root Employees</div>
+                </div>
+                <div class="stat-card">
+                    <div class="val">{{ result.manager_direct_report_counts|length }}</div>
+                    <div class="lbl">Active Managers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="val">{{ result.cyclic_employees|length }}</div>
+                    <div class="lbl">Cyclic Employees</div>
+                </div>
+            </div>
+
+            <!-- Validation Errors -->
+            <section class="section-card">
+                <div class="section-title">
+                    <span>Validation Errors</span>
+                    {% if result.errors %}
+                        <span class="badge badge-danger">{{ result.errors|length }} Issues</span>
+                    {% else %}
+                        <span class="badge badge-success">Clean</span>
+                    {% endif %}
+                </div>
+                {% if result.errors %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 120px;">Source Row</th>
+                                <th>Error Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for err in result.errors %}
+                                <tr>
+                                    <td>Row {{ err.source_row }}</td>
+                                    <td>{{ err.message }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="empty-state">No validation errors.</p>
+                {% endif %}
+            </section>
+
+            <!-- Root Employees -->
+            <section class="section-card">
+                <div class="section-title">
+                    <span>Root Employees</span>
+                    <span class="badge badge-success">{{ result.roots|length }} Found</span>
+                </div>
+                {% if result.roots %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Source Row</th>
+                                <th>Employee ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Department</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for root in result.roots %}
+                                <tr>
+                                    <td>Row {{ root.source_row }}</td>
+                                    <td><code>{{ root.employee_id }}</code></td>
+                                    <td>{{ root.employee_name }}</td>
+                                    <td>{{ root.email }}</td>
+                                    <td>{{ root.department }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="empty-state">No root employees detected.</p>
+                {% endif %}
+            </section>
+
+            <!-- Managers & Direct Reports -->
+            <section class="section-card">
+                <div class="section-title">
+                    <span>Managers & Direct Reports</span>
+                    <span class="badge badge-warning">{{ result.manager_direct_report_counts|length }} Managers</span>
+                </div>
+                {% if result.manager_direct_report_counts %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Manager ID</th>
+                                <th>Manager Name</th>
+                                <th>Manager Email</th>
+                                <th>Department</th>
+                                <th style="text-align: right;">Direct Reports</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in result.manager_direct_report_counts %}
+                                <tr>
+                                    <td><code>{{ item.manager.employee_id }}</code></td>
+                                    <td>{{ item.manager.employee_name }}</td>
+                                    <td>{{ item.manager.email }}</td>
+                                    <td>{{ item.manager.department }}</td>
+                                    <td style="text-align: right; font-weight: 600;">{{ item.direct_reports_count }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="empty-state">No manager relationships established.</p>
+                {% endif %}
+            </section>
+
+            <!-- Reporting Cycles -->
+            <section class="section-card">
+                <div class="section-title">
+                    <span>Reporting Cycles</span>
+                    {% if result.cyclic_employees %}
+                        <span class="badge badge-danger">{{ result.cyclic_employees|length }} Cyclic</span>
+                    {% else %}
+                        <span class="badge badge-success">No Cycles</span>
+                    {% endif %}
+                </div>
+                {% if result.cyclic_employees %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Source Row</th>
+                                <th>Employee ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Manager Reference</th>
+                                <th>Department</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for emp in result.cyclic_employees %}
+                                <tr>
+                                    <td>Row {{ emp.source_row }}</td>
+                                    <td><code>{{ emp.employee_id }}</code></td>
+                                    <td>{{ emp.employee_name }}</td>
+                                    <td>{{ emp.email }}</td>
+                                    <td>
+                                        {% if emp.manager_id %}ID: <code>{{ emp.manager_id }}</code>{% endif %}
+                                        {% if emp.manager_email %}Email: {{ emp.manager_email }}{% endif %}
+                                    </td>
+                                    <td>{{ emp.department }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="empty-state">No reporting cycles detected.</p>
+                {% endif %}
+            </section>
+
+            <!-- Accepted Employees -->
+            <section class="section-card">
+                <div class="section-title">
+                    <span>Accepted Employees</span>
+                    <span class="badge badge-success">{{ result.accepted_employees|length }} Valid</span>
+                </div>
+                {% if result.accepted_employees %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Source Row</th>
+                                <th>Employee ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Department</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for emp in result.accepted_employees %}
+                                <tr>
+                                    <td>Row {{ emp.source_row }}</td>
+                                    <td><code>{{ emp.employee_id }}</code></td>
+                                    <td>{{ emp.employee_name }}</td>
+                                    <td>{{ emp.email }}</td>
+                                    <td>{{ emp.department }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="empty-state">No valid accepted employees.</p>
+                {% endif %}
+            </section>
+        {% endif %}
+    </div>
+</body>
+</html>
